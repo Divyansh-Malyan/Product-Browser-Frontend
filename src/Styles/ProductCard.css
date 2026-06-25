@@ -1,0 +1,37 @@
+.product-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    transition: 0.25s;
+}
+
+.product-card:hover {
+    transform: translateY(-4px);
+}
+
+.product-card h2 {
+    margin: 0;
+    font-size: 22px;
+}
+
+.product-card h3 {
+    color: #2563eb;
+    margin: 12px 0;
+}
+
+.category {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 5px 10px;
+    border-radius: 20px;
+    background: #eef4ff;
+    color: #2563eb;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.product-card p {
+    margin: 6px 0;
+    color: #555;
+}
