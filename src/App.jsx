@@ -6,21 +6,29 @@ function App() {
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
-
     const [category, setCategory] = useState("");
 
-    const [nextCursor, setNextCursor] = useState(null);
+    // const [nextCursor, setNextCursor] = useState(null);
     const [hasMore, setHasMore] = useState(true);
+    const [currentPage, setCurrentPage] = useState(1);
+
+    // Cursor used to fetch each page
+    // Page 1 -> null
+    // Page 2 -> cursor1
+    // Page 3 -> cursor2
+    const [cursorHistory, setCursorHistory] = useState([null]);
 
     useEffect(() => {
         setProducts([]);
-        setNextCursor(null);
         setHasMore(true);
 
-        loadProducts();
+        setCurrentPage(1);
+        setCursorHistory([null]);
+
+        loadProducts(null, 1);
     }, [category]);
 
-    async function loadProducts(cursor = null) {
+    async function loadProducts(cursor = null, page = currentPage) {
         try {
             if (cursor) {
                 setLoadingMore(true);
@@ -33,13 +41,21 @@ function App() {
                 category: category || null,
             });
 
-            if (cursor) {
-                setProducts((prev) => [...prev, ...data.products]);
-            } else {
-                setProducts(data.products);
-            }
+            setProducts(data.products);
 
-            setNextCursor(data.nextCursor);
+            setCursorHistory((prev) => {
+                const updated = [...prev];
+
+                // Save cursor for the NEXT page only once
+                if (
+                    data.nextCursor &&
+                    updated.length === page
+                ) {
+                    updated.push(data.nextCursor);
+                }
+
+                return updated;
+            });
             setHasMore(data.hasMore);
         } catch (error) {
             console.error("Failed to fetch products:", error);
@@ -49,12 +65,33 @@ function App() {
         }
     }
 
-    async function loadMoreProducts() {
-        console.log("Button Clicked");
-
+    async function handleNext() {
         if (!hasMore || loadingMore) return;
 
-        await loadProducts(nextCursor);
+        const nextPage = currentPage + 1;
+
+        await loadProducts(
+            cursorHistory[currentPage],
+            nextPage
+        );
+
+        setCurrentPage(nextPage);
+    }
+
+    async function handlePrevious() {
+        if (currentPage === 1 || loadingMore) return;
+
+        const previousCursor =
+            cursorHistory[currentPage - 2];
+
+            const previousPage = currentPage - 1;
+
+            await loadProducts(
+                previousCursor,
+                previousPage
+            );
+            
+            setCurrentPage(previousPage);
     }
 
 
@@ -95,9 +132,15 @@ function App() {
                     </select>
                 </div>
 
-                <p>
-                    Showing <strong>{products.length}</strong> Products
-                </p>
+                <div className="page-info">
+                    <p>
+                        Page <strong>{currentPage}</strong>
+                    </p>
+
+                    <p>
+                        Showing <strong>{products.length}</strong> Products
+                    </p>
+                </div>
             </div>
 
             <div className="products-grid">
@@ -109,20 +152,28 @@ function App() {
                 ))}
             </div>
 
-            <div className="load-more-container">
-                {hasMore ? (
-                    <button
-                        className="load-more-btn"
-                        onClick={loadMoreProducts}
-                        disabled={loadingMore}
-                    >
-                        {loadingMore ? "Loading..." : "Load More"}
-                    </button>
-                ) : (
-                    <p className="end-message">
-                        You've reached the end of the products.
-                    </p>
-                )}
+            <div className="pagination-container">
+
+                <button
+                    className="pagination-btn"
+                    onClick={handlePrevious}
+                    disabled={currentPage === 1 || loadingMore}
+                >
+                    ← Previous
+                </button>
+
+                <span className="page-number">
+                    Page {currentPage}
+                </span>
+
+                <button
+                    className="pagination-btn"
+                    onClick={handleNext}
+                    disabled={!hasMore || loadingMore}
+                >
+                    {loadingMore ? "Loading..." : "Next →"}
+                </button>
+
             </div>
         </div>
     );
